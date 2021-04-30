@@ -59,7 +59,7 @@ def excel_wordlist(request):
 
 
 def copy_to_temp(cldf_wordlist):
-    """Copy the dataset to a different temporary location, so that editing the dataset will not change it."""
+    """ Copy the dataset to a different temporary location, so that editing the dataset will not change it."""
     original = cldf_wordlist
     dataset = pycldf.Dataset.from_metadata(original)
     orig_bibpath = dataset.bibpath
@@ -82,14 +82,14 @@ def copy_to_temp(cldf_wordlist):
 
 
 def copy_to_temp_no_bib(cldf_wordlist):
-    """Copy the dataset to a temporary location, then delete the sources file."""
+    """ Copy the dataset to a temporary location, then delete the sources file."""
     dataset, target = copy_to_temp(cldf_wordlist)
     dataset.bibpath.unlink()
     return dataset, target
 
 
 def copy_to_temp_bad_bib(cldf_wordlist):
-    """Copy the dataset to a temporary location, then mess with the source file syntax."""
+    """ Copy the dataset to a temporary location, then mess with the source file syntax."""
     dataset, target = copy_to_temp(cldf_wordlist)
     with dataset.bibpath.open("a") as bibfile:
         bibfile.write("\n { \n")
