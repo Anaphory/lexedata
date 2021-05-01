@@ -8,6 +8,7 @@ import pycldf
 import openpyxl as op
 
 from lexedata import types
+from lexedata.util import parse_segment_slice
 
 WARNING = "\u26A0"
 
@@ -315,24 +316,33 @@ class ExcelWriter:
             transcription = form["Form"]
         else:
             transcription = ""
-            old_end = 0
+            # TODO: use CLDF property instead of column name
             if not meta.get("Segment_Slice"):
                 meta["Segment_Slice"] = ["0:{:d}".format(len(segments))]
-            for startend in meta["Segment_Slice"]:
-                start, end = startend.split(":")
-                start = int(start)
-                end = int(end)
-                transcription += "".join(s[0] for s in segments[old_end:start])
-                transcription += "{ "
-                transcription += " ".join(segments[start:end])
-                # TODO: Find a sensible way to split the alignments instead – this
-                # is trivial for a single segment slice, but requires some fiddling
-                # for split morphemes.
-                transcription += " }"
-                old_end = end
-            transcription += "".join(
-                s[0] for s in segments[old_end : len(segments) + 1]
+            # What if segments overlap or cross? Overlap shouldn't happen, but
+            # we don't check here. Crossing might happen, but this
+            # serialization cannot reflect it, so we enforce order, expecting
+            # that an error message here will be more useful than silently
+            # messing with data.
+            included_segments = set(
+                parse_segment_slice(meta["Segment_Slice"], enforce_ordered=True)
             )
+
+            included = False
+            for i, s in enumerate(segments):
+                if included and i not in included_segments:
+                    transcription += " }" + s
+                    included = False
+                elif not included and i in included_segments:
+                    transcription += "{ " + s
+                    included = True
+                elif i in included_segments:
+                    transcription += " " + s
+                else:
+                    transcription += s
+            if included:
+                transcription += " }"
+
             transcription = transcription.strip()
         translations = []
 
