@@ -15,7 +15,7 @@ import typing as t
 from lexedata.util import parse_segment_slice, cache_table
 
 
-def check_segmentslice_separator(dataset, log=None):
+def check_segmentslice_separator(dataset, log=None) -> bool:
     if dataset["FormTable", "segments"].separator != " ":
         log_or_raise(
             'FormTable segment separator must be " " (space) for downstream lexedata tools to work.',
@@ -25,7 +25,7 @@ def check_segmentslice_separator(dataset, log=None):
     return True
 
 
-def check_cognate_table(dataset):
+def check_cognate_table(dataset: pycldf.Wordlist, log=None) -> bool:
     """Check that the CognateTable makes sense.
 
     The cognate table MUST have an indication of forms, in a #formReference
@@ -51,14 +51,16 @@ def check_cognate_table(dataset):
     try:
         c_form = dataset["CognateTable", "formReference"].name
     except KeyError:
-        log_or_raise("CognateTable does not have a #formReference column.")
+        log_or_raise("CognateTable does not have a #formReference column.", log=log)
         # All further checks don't make sense, return early.
         return False
 
     try:
         c_cognateset = dataset["CognateTable", "cognatesetReference"].name
     except KeyError:
-        log_or_raise("CognateTable does not have a #cognatesetReference column.")
+        log_or_raise(
+            "CognateTable does not have a #cognatesetReference column.", log=log
+        )
         # All further checks don't make sense, return early.
         return False
 
@@ -78,24 +80,25 @@ def check_cognate_table(dataset):
                 == "http://cldf.clld.org/v1.0/terms.rdf#FormTable"
             ):
                 log_or_raise(
-                    "CognateTable #formReference does not reference a FormTable."
+                    "CognateTable #formReference does not reference a FormTable.",
+                    log=log,
                 )
             break
     else:
-        log_or_raise("CognateTable #formReference must be a foreign key.")
+        log_or_raise("CognateTable #formReference must be a foreign key.", log=log)
         # All further checks don't make sense, return early.
         return False
 
     try:
         c_sslice = dataset["CognateTable", "segmentSlice"].name
     except KeyError:
-        log_or_raise("CognateTable does not have a #segmentSlice column.")
+        log_or_raise("CognateTable does not have a #segmentSlice column.", log=log)
         c_sslice = None
 
     try:
         c_alignment = dataset["CognateTable", "alignment"].name
     except KeyError:
-        log_or_raise("CognateTable does not have a #segmentSlice column.")
+        log_or_raise("CognateTable does not have a #segmentSlice column.", log=log)
         c_alignment = None
 
     if c_sslice is None and c_alignment is None:
@@ -115,12 +118,12 @@ def check_cognate_table(dataset):
     cognateset_alignment_lengths: t.DefaultDict[t.Set[int]] = t.DefaultDict(set)
 
     for f, j, judgement in dataset["CognateTable"].iterdicts(
-        log=..., with_metadata=True
+        log=log, with_metadata=True
     ):
         form_segments = forms[judgement[c_form]]
         if c_sslice is not None:
             if not judgement[c_sslice]:
-                log_or_raise("In {}, row {}: Empty segment slice".format(f, j))
+                log_or_raise("In {}, row {}: Empty segment slice".format(f, j), log=log)
                 continue
             included_segments = list(parse_segment_slice(judgement[c_sslice]))
             if max(included_segments) >= len(form_segments):
@@ -130,7 +133,8 @@ def check_cognate_table(dataset):
                         j,
                         judgement[c_sslice],
                         form_segments,
-                    )
+                    ),
+                    log=log,
                 )
                 all_judgements_okay = False
         else:
@@ -144,7 +148,8 @@ def check_cognate_table(dataset):
                 log_or_raise(
                     "In {}, row {}: Alignment has length {}, other alignments of cognateset {} have length(s) {}".format(
                         f, j, alignment_length, judgement[c_cognateset], lengths
-                    )
+                    ),
+                    log=log,
                 )
                 all_judgements_okay = False
             elif not lengths:
@@ -161,7 +166,8 @@ def check_cognate_table(dataset):
                 log_or_raise(
                     "In {}, row {}: Referenced segments in form resolve to {}, while alignment contains segments {}.".format(
                         f, j, actual_segments, without_gaps
-                    )
+                    ),
+                    log=log,
                 )
                 all_judgements_okay = False
 
