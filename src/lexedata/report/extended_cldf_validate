@@ -1,5 +1,0 @@
-all ids should be primary keys
-
-Which columns may contain separators?
-
-no ID of a reference that contains separators may contain that separator

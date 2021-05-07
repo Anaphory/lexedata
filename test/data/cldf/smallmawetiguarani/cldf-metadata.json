@@ -225,6 +225,7 @@
                     },
                     {
                         "datatype": "string",
+			"separator": " ",
                         "propertyUrl": "http://cldf.clld.org/v1.0/terms.rdf#segments",
                         "name": "Segments"
                     },
@@ -266,7 +267,7 @@
                     },
                     {
                         "columnReference": [
-                            "Concept_ID"
+                            "Parameter_ID"
                         ],
                         "reference": {
                             "resource": "concepts.csv",
@@ -396,10 +397,12 @@
                     },
                     {
                         "datatype": "string",
+                        "propertyUrl": "http://cldf.clld.org/v1.0/terms.rdf#segmentSlice",
                         "name": "Segment_Slice"
                     },
                     {
                         "datatype": "string",
+                        "propertyUrl": "http://cldf.clld.org/v1.0/terms.rdf#alignment",
                         "name": "Alignment"
                     },
                     {

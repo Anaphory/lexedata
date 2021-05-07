@@ -24,6 +24,14 @@ def cldf_property(url: csvw.metadata.URITemplate) -> t.Optional[str]:
         return None
 
 
+def cldf_property(url: csvw.metadata.URITemplate) -> t.Optional[str]:
+    if url.uri.startswith("http://cldf.clld.org/v1.0/terms.rdf#"):
+        # len("http://cldf.clld.org/v1.0/terms.rdf#") == 36
+        return url[36:]
+    else:
+        return None
+
+
 def string_to_id(string: str) -> str:
     """Generate a useful id string from the string
 
