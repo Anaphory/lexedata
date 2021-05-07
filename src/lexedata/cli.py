@@ -6,6 +6,7 @@ import typing as t
 import tqdm
 
 logger = logging.getLogger("lexedata")
+logging.basicConfig(level=logging.INFO)
 
 
 def tq(iter, logger=logger, total: t.Optional[t.Union[int, float]] = None):
