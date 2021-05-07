@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pycldf
 
-from lexedata.util import parse_segment_slices as segment_slices_to_segment_list
+from lexedata.util import parse_segment_slices
 
 
 def segment_to_cognateset(dataset: pycldf.Dataset, cognatesets: t.Iterable):
@@ -29,7 +29,7 @@ def segment_to_cognateset(dataset: pycldf.Dataset, cognatesets: t.Iterable):
                 which_segment_belongs_to_which_cognateset[j[c_cognate_form]] = [
                     set() for _ in form[c_form_segments]
                 ]
-            segments_judged = segment_slices_to_segment_list(
+            segments_judged = parse_segment_slices(
                 segments=form[c_form_segments], judgement=j
             )
             for s in segments_judged:

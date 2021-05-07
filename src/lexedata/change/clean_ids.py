@@ -23,10 +23,10 @@ def clean_mapping(rows: t.Mapping[str, t.Mapping[str, str]]) -> t.Mapping[str, s
     """Create unique normalized IDs.
 
     >>> clean_mapping({"A": {}, "B": {}})
-    {"A": "a", "B": "b"}
+    {'A': 'a', 'B': 'b'}
 
     >>> clean_mapping({"A": {}, "a": {}})
-    {"A": "a", "a": "a_x2"}
+    {'A': 'a', 'a': 'a_x2'}
     """
     avoid = {id.lower() for id in rows}
 
