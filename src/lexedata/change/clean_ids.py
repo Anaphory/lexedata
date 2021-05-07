@@ -20,10 +20,17 @@ ID_COMPONENTS: t.Mapping[str, t.Sequence[str]] = {
 
 
 def clean_mapping(rows: t.Mapping[str, t.Mapping[str, str]]) -> t.Mapping[str, str]:
-    """Create unique normalized IDs."""
+    """Create unique normalized IDs.
+
+    >>> clean_mapping({"A": {}, "B": {}})
+    {"A": "a", "B": "b"}
+
+    >>> clean_mapping({"A": {}, "a": {}})
+    {"A": "a", "a": "a_x2"}
+    """
     avoid = {id.lower() for id in rows}
 
-    mapping = {}
+    mapping: t.Dict[str, str] = {}
     for id, row in rows.items():
         i = 1
         if row:
@@ -31,16 +38,16 @@ def clean_mapping(rows: t.Mapping[str, t.Mapping[str, str]]) -> t.Mapping[str, s
         else:
             base = string_to_id(id)
 
-        if base in avoid and base not in mapping:
+        if base in avoid and base not in mapping.values():
             # I kept a spot for you!
             mapping[id] = base
             continue
 
         # Make sure ID is unique
         tentative_mapping = base
-        while tentative_mapping in avoid or tentative_mapping in mapping:
+        while tentative_mapping in avoid or tentative_mapping in mapping.values():
             i += 1
-            tentative_mapping = "{:}_s{:}".format(base, i)
+            tentative_mapping = "{:}_x{:}".format(base, i)
         mapping[id] = tentative_mapping
 
     return mapping
@@ -55,6 +62,7 @@ def update_ids(
     for row in cli.tq(ds[table], total=ds[table].common_props.get("dc:extent")):
         row[c_id.name] = mapping.get(row[c_id.name], row[c_id.name])
         rows.append(row)
+    logger.info(f"Writing {table.url.string} back to file…")
     table.write(rows)
 
     c_id.datatype.format = ID_FORMAT.pattern
@@ -81,6 +89,7 @@ def update_ids(
             for column in columns:
                 row[column] = mapping.get(row[column], row[column])
             rows.append(row)
+        logger.info(f"Writing {other_table} back to file…")
         ds[other_table].write(rows)
 
         for column in columns:
