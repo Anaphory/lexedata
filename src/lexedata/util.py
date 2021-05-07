@@ -12,6 +12,7 @@ import networkx
 from lingpy.compare.strings import ldn_swap
 
 import csvw
+from lexedata.cli import tq
 
 ID_FORMAT = re.compile("[a-z0-9_]+")
 
@@ -19,7 +20,7 @@ ID_FORMAT = re.compile("[a-z0-9_]+")
 def cldf_property(url: csvw.metadata.URITemplate) -> t.Optional[str]:
     if url.uri.startswith("http://cldf.clld.org/v1.0/terms.rdf#"):
         # len("http://cldf.clld.org/v1.0/terms.rdf#") == 36
-        return url[36:]
+        return url.uri[36:]
     else:
         return None
 
@@ -182,20 +183,59 @@ def parse_segment_slices(
 # `util` or so. There we can also make the internal logic more robust.
 def cache_table(
     dataset,
+    table: t.Optional[str] = None,
     columns: t.Optional[t.Mapping[str, str]] = None,
-    table="FormTable",
     index_column="id",
 ) -> t.Mapping[str, t.Mapping[str, t.Any]]:
-    """Load the table into memory as a dictionary of dictionaries"""
+    """Load a dataset table into memory as a dictionary of dictionaries.
+
+    If the table is unspecified, use the primary table of the dataset.
+
+    If the columns are unspecified, read each row completely, into a dictionary
+    indexed by the local CLDF properties of the table.
+
+    Examples
+    ========
+
+    >>> ds = pycldf.Wordlist.from_metadata(Path(__file__).parent / "../../test/data/cldf/smallmawetiguarani/cldf-metadata.json")
+    >>> forms = cache_table(ds)
+    >>> forms["ache_one"]["languageReference"]
+    'ache'
+    >>> forms["ache_one"]["form"]
+    "e.ta.'kɾã"
+    >>> forms["ache_one"]["variants"]
+    ['~[test_variant with various comments]']
+
+    We can also use it to look up a specific set of columns, and change the index column.
+    This allows us, for example, to get language IDs by name:
+
+    >>> languages = cache_table(ds, "LanguageTable", {"id": "ID"}, index_column="Name")
+    >>> languages == {'Aché': {'id': 'ache'},
+    ...               'Paraguayan Guaraní': {'id': 'paraguayan_guarani'},
+    ...               'Old Paraguayan Guaraní': {'id': 'old_paraguayan_guarani'},
+    ...               'Kaiwá': {'id': 'kaiwa'}}
+    True
+
+    In this case identical values later in the file overwrite earlier ones.
+
+    """
+    if table is None:
+        table = dataset.primary_table
+    assert (
+        table
+    ), "If your dataset has no primary table, you must specify which table to cache."
     if columns is None:
         columns = {
-            cldf_property(c.propertyUrl) or c.name: c.name
+            (cldf_property(c.propertyUrl) if c.propertyUrl else c.name)
+            or c.name: c.name
             for c in dataset[table].tableSchema.columns
         }
     c_id = dataset[table, index_column].name
     return {
         row[c_id]: {prop: row[name] for prop, name in columns.items()}
-        for row in dataset[table]
+        for row in tq(
+            dataset[table], total=dataset[table].common_props.get("dc:extent")
+        )
     }
 
 
